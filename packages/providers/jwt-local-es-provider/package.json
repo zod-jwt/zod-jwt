@@ -1,0 +1,36 @@
+{
+  "name": "@zod-jwt/jwt-local-es-provider",
+  "type": "module",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "Adam Smith",
+  "description": "Sign, Verify, and Decode JWTs with Zod",
+  "homepage": "https://github.com/zod-jwt/zod-jwt/README.md",
+  "keywords": ["zod", "jwt", "kms", "aws"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zod-jwt/zod-jwt/README.md"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "compile": "tsc -p tsconfig.build.json",
+    "build": "pnpm run clean && pnpm run compile",
+    "test": "pnpm vitest run --reporter verbose"
+  },
+  "peerDependencies": {
+    "@zod-jwt/core": "workspace:*"
+  },
+  "dependencies": {
+    "ecdsa-sig-formatter": "^1.0.11"
+  }
+}

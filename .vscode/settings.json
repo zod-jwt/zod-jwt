@@ -1,0 +1,10 @@
+{
+  "eslint.validate": ["typescript"],
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": true, "source.organizeImports": true },
+  "json.format.keepLines": false,
+  "json.format.enable": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "dotenv.enableAutocloaking": false
+}
