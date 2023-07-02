@@ -67,10 +67,8 @@ import { z } from 'zod';
 export const provider = new JwtLocalHsProvider({
   algorithms: ['HS256'],
   credentials: {
-    HS256: {
-      secret: process.env.JWT_HS_SECRET as string,
-      encoding: 'hex',
-    },
+    secret: process.env.JWT_HS_SECRET as string,
+    encoding: 'hex',
   },
   publicClaimsSchema: z.object({
     iss: z.literal('auth.example.com'),

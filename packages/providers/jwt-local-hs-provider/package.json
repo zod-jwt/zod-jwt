@@ -1,7 +1,7 @@
 {
   "name": "@zod-jwt/jwt-local-hs-provider",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "author": "Adam Smith",
   "description": "Sign, Verify, and Decode JWTs with Zod",
