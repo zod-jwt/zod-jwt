@@ -1,7 +1,7 @@
 {
   "name": "@zod-jwt/jwt-kms-es-provider",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "author": "Adam Smith",
   "description": "Sign, Verify, and Decode JWTs with Zod and AWS KMS",
@@ -25,7 +25,8 @@
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.build.json",
     "build": "pnpm run clean && pnpm run compile",
-    "test": "pnpm vitest run --reporter verbose"
+    "test": "pnpm vitest run --reporter verbose",
+    "publish": "pnpm publish --access public"
   },
   "peerDependencies": {
     "@zod-jwt/core": "workspace:*",

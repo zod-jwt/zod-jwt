@@ -100,4 +100,4 @@ const const { header, privateClaims, publicClaims } = await provider.verify({
 });
 ```
 
-Please refer back to the main [@zod-jwt docs](../../../README.md) for the more advanced options for signing and decoding tokens.
+Please refer back to the main [@zod-jwt docs](https://github.com/zod-jwt/zod-jwt) for the more advanced options for signing and decoding tokens.

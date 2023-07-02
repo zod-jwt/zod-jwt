@@ -1,6 +1,6 @@
 {
   "name": "zod-jwt-monorepo",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "scripts": {
     "ui": "vitest --ui",
@@ -8,7 +8,8 @@
     "clean": "nx run-many -t clean",
     "compile": "nx run-many -t compile",
     "build": "nx run-many -t build",
-    "test": "nx run-many -t test"
+    "test": "nx run-many -t test",
+    "publish": "nx run-many -t build && nx run-many -t test && nx run-many -t publish"
   },
   "private": true,
   "type": "module",

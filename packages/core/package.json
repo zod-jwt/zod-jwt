@@ -1,7 +1,7 @@
 {
   "name": "@zod-jwt/core",
   "type": "module",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "license": "MIT",
   "author": "Adam Smith",
   "homepage": "https://github.com/zod-jwt/zod-jwt",
@@ -38,6 +38,7 @@
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.build.json",
     "build": "pnpm run clean && pnpm run compile",
-    "test": "pnpm vitest run --reporter verbose"
+    "test": "pnpm vitest run --reporter verbose",
+    "publish": "pnpm publish --access public"
   }
 }
