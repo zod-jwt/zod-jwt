@@ -5,11 +5,11 @@
   "license": "MIT",
   "author": "Adam Smith",
   "description": "Sign, Verify, and Decode JWTs with Zod",
-  "homepage": "https://github.com/zod-jwt/zod-jwt/README.md",
+  "homepage": "https://github.com/zod-jwt/zod-jwt",
   "keywords": ["zod", "jwt", "kms", "aws"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/zod-jwt/zod-jwt/README.md"
+    "url": "https://github.com/zod-jwt/zod-jwt"
   },
   "exports": {
     ".": {

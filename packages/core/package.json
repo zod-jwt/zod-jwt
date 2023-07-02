@@ -1,13 +1,13 @@
 {
   "name": "@zod-jwt/core",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "author": "Adam Smith",
-  "homepage": "https://github.com/zod-jwt/zod-jwt/README.md",
+  "homepage": "https://github.com/zod-jwt/zod-jwt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zod-jwt/zod-jwt/README.md"
+    "url": "https://github.com/zod-jwt/zod-jwt"
   },
   "exports": {
     ".": {
