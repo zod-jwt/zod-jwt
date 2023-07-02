@@ -11,8 +11,11 @@
     "type": "git",
     "url": "https://github.com/zod-jwt/zod-jwt"
   },
-  "main": "./dist/",
   "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "files": ["dist"],
   "engines": {
     "node": ">=16"

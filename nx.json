@@ -12,7 +12,7 @@
   "targetDefaults": {
     "build": {
       "dependsOn": ["^default", "^build"],
-      "inputs": ["{projectRoot}/**/*.ts", "!{projectRoot}/**/*.spec.ts"],
+      "inputs": ["{projectRoot}/**/*.ts", "{projectRoot}/package.json", "!{projectRoot}/**/*.spec.ts"],
       "outputs": ["{projectRoot}/package.json", "{projectRoot}/dist"]
     },
     "test": {
