@@ -1,7 +1,7 @@
 {
   "name": "@zod-jwt/core",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "author": "Adam Smith",
   "homepage": "https://github.com/zod-jwt/zod-jwt",
@@ -9,20 +9,8 @@
     "type": "git",
     "url": "https://github.com/zod-jwt/zod-jwt"
   },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./errors": {
-      "import": "./dist/errors/index.js",
-      "types": "./dist/errors/index.d.ts"
-    },
-    "./schema": {
-      "import": "./dist/schema/index.js",
-      "types": "./dist/schema/index.d.ts"
-    }
-  },
+  "main": "./dist/",
+  "module": "./dist/index.js",
   "engines": {
     "node": ">=16"
   },
