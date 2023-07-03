@@ -1,7 +1,7 @@
 {
   "name": "@zod-jwt/jwt-local-rs-provider",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "author": "Adam Smith",
   "description": "Sign, Verify, and Decode JWTs with Zod",
@@ -24,8 +24,7 @@
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.build.json",
     "build": "pnpm run clean && pnpm run compile",
-    "test": "pnpm vitest run --reporter verbose",
-    "publish": "pnpm publish --access public"
+    "test": "pnpm vitest run --reporter verbose"
   },
   "peerDependencies": {
     "@zod-jwt/core": "workspace:*"

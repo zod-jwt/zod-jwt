@@ -159,7 +159,7 @@ const token = await provider.sign({
     iss: 'auth.example.com',
     aud: 'example.com',
     sub: 'user_1234',
-    nbf: -1000, // <-- back date by 1 minute
+    nbf: -1000 * 60, // <-- back date by 1 minute
     exp: 1000 * 60 * 10, // <-- set the exp to 10 minutes from now
   },
   privateClaims: {
