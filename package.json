@@ -9,7 +9,7 @@
     "compile": "nx run-many -t compile",
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
-    "publish": "nx run-many -t build && nx run-many -t test && nx run-many -t publish"
+    "deploy": "nx run-many -t build && nx run-many -t test && nx run-many -t deploy"
   },
   "private": true,
   "type": "module",
