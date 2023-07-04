@@ -2,34 +2,19 @@ import ms from 'ms';
 import { afterEach, describe, expect, it, test, vi } from 'vitest';
 import { z } from 'zod';
 import { JwtTokenClaimError, JwtTokenInvalidSignatureError } from '../../errors/index.js';
-import { Base64UrlEncoded, JwtAudienceClaim, JwtHeaderSchema, JwtIssuerClaim, JwtJtiClaim, JwtSubjectClaim } from '../../schema/index.js';
+import { Jwt } from '../../jwt/jwt.js';
+import { Base64UrlEncoded, JwtHeaderSchema } from '../../schema/index.js';
 import { JwtProviderSignArgs, JwtProviderVerifyArgs } from '../jwt-abstract-provider-types/abstract-jwt-types.js';
 import { JwtAbstractProvider, JwtProviderConstructorArgs } from './jwt-abstract-provider.js';
 
-export type JwtMockProviderConfig<
-  PrivateClaimsSchema extends z.AnyZodObject,
-  IssuerClaim extends JwtIssuerClaim = JwtIssuerClaim,
-  SubjectClaim extends JwtSubjectClaim = JwtSubjectClaim,
-  AudienceClaim extends JwtAudienceClaim = JwtAudienceClaim,
-  JtiClaim extends JwtJtiClaim = JwtJtiClaim
-> = Omit<
-  JwtProviderConstructorArgs<'RS256', 'RS256', PrivateClaimsSchema, IssuerClaim, SubjectClaim, AudienceClaim, JtiClaim>,
-  'algorithms' | 'providerName'
->;
+export type JwtMockProviderConfig = Omit<JwtProviderConstructorArgs<'test', 'RS256', 'RS256'>, 'algorithms' | 'providerName'>;
 
-export class JwtMockProvider<
-  PrivateClaimsSchema extends z.AnyZodObject,
-  IssuerClaim extends JwtIssuerClaim = JwtIssuerClaim,
-  SubjectClaim extends JwtSubjectClaim = JwtSubjectClaim,
-  AudienceClaim extends JwtAudienceClaim = JwtAudienceClaim,
-  JtiClaim extends JwtJtiClaim = JwtJtiClaim
-> extends JwtAbstractProvider<'RS256', 'RS256', PrivateClaimsSchema, IssuerClaim, SubjectClaim, AudienceClaim, JtiClaim> {
-  constructor(private config: JwtMockProviderConfig<PrivateClaimsSchema, IssuerClaim, SubjectClaim, AudienceClaim, JtiClaim>) {
+export class JwtMockProvider extends JwtAbstractProvider<'test', 'RS256', 'RS256'> {
+  constructor(private config: JwtMockProviderConfig) {
     super({
       supportedAlgorithms: ['RS256'],
       algorithms: ['RS256'],
-      privateClaimsSchema: config.privateClaimsSchema,
-      publicClaimsSchema: config.publicClaimsSchema,
+      providerName: 'test',
     });
   }
 
@@ -44,6 +29,25 @@ export class JwtMockProvider<
   }
 }
 
+function createProvider() {
+  const provider = new JwtMockProvider({});
+  const jwt = new Jwt({ providers: [provider] });
+  const schema = z.object({
+    publicClaims: z.object({}),
+    privateClaims: z.object({}),
+  });
+  const data = {
+    privateClaims: {},
+    publicClaims: {},
+  };
+  return {
+    provider,
+    jwt,
+    schema,
+    data,
+  };
+}
+
 // These tests validate the behavior of the abstract class
 // A fake provider is used to run the tests against
 describe('JwtAbstractProvider', () => {
@@ -52,110 +56,91 @@ describe('JwtAbstractProvider', () => {
   });
 
   it('can create a token with no schemas', async () => {
-    const provider = new JwtMockProvider({});
-    const token = await provider.sign({ algorithm: 'RS256', privateClaims: {}, publicClaims: {} });
-    expect(token).toBeTruthy();
-  });
-
-  it('can create a token with only the publicClaimsSchema', async () => {
-    const provider = new JwtMockProvider({
-      publicClaimsSchema: z.object({
-        aud: z.literal('test'),
-      }),
+    const { jwt, schema, data } = createProvider();
+    const token = await jwt.sign({
+      algorithm: 'RS256',
+      provider: 'test',
+      data,
+      schema,
     });
-    const token = await provider.sign({ algorithm: 'RS256', privateClaims: {}, publicClaims: { aud: 'test' } });
     expect(token).toBeTruthy();
-    const verified = await provider.verify({ token });
-    expect(verified).toBeTruthy();
-  });
-
-  it('can create a token with only the privateClaimsSchema', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({
-        test: z.literal('test'),
-      }),
-    });
-    const token = await provider.sign({ algorithm: 'RS256', privateClaims: { test: 'test' }, publicClaims: {} });
-    expect(token).toBeTruthy();
-    const verified = await provider.verify({ token });
-    expect(verified).toBeTruthy();
   });
 
   test.each(['nbf', 'exp', 'iat'] as const)('should set the %s claim by default', async (claim) => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      schema,
+      data,
+      provider: 'test',
     });
 
-    const { publicClaims } = await provider.decode({
+    const { publicClaims } = await jwt.decode({
       token,
+      provider: 'test',
+      schema,
     });
     expect(publicClaims[claim]).toBeTypeOf('number');
   });
 
   test.each(['iss', 'sub', 'jti', 'aud'] as const)('should not set the %s claim by default', async (claim) => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      provider: 'test',
+      data,
+      schema,
     });
 
-    const { publicClaims } = await provider.decode({
+    const { publicClaims } = await jwt.decode({
       token,
+      provider: 'test',
+      schema,
     });
 
-    expect(publicClaims[claim]).toBeUndefined();
+    expect((publicClaims as Record<string, unknown>)[claim]).toBeUndefined();
   });
 
   test('nbf claim should equal iat claim by default', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      provider: 'test',
+      schema,
+      data,
     });
 
-    const { publicClaims } = await provider.decode({
+    const { publicClaims } = await jwt.decode({
       token,
+      provider: 'test',
+      schema,
     });
 
     expect(publicClaims.nbf).toEqual(publicClaims.iat);
   });
 
   test('exp claim should be set 15 minutes ahead by default', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
     const timestamp = new Date();
 
     const expectedExp = Math.floor((timestamp.getTime() + 60000 * 15) / 1000);
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      provider: 'test',
+      schema,
+      data,
       timestamp,
     });
 
-    const { publicClaims } = await provider.decode({
+    const { publicClaims } = await jwt.decode({
       token,
+      provider: 'test',
+      schema,
     });
 
     expect(publicClaims.exp).toEqual(expectedExp);
@@ -195,11 +180,7 @@ describe('JwtAbstractProvider', () => {
   ] satisfies ({ claim: string; type: 'string'; value: string } | { claim: string; type: 'number'; value: number })[])(
     'can manually set the $claim with a $type',
     async ({ claim, value }) => {
-      const provider = new JwtMockProvider({
-        privateClaimsSchema: z.object({}),
-        publicClaimsSchema: z.object({}),
-      });
-
+      const { jwt, schema, data } = createProvider();
       const timestamp = new Date();
 
       const expectedValue =
@@ -208,113 +189,96 @@ describe('JwtAbstractProvider', () => {
             Math.floor(((timestamp.getTime() + ms(value)) / 1000 ) )
           : Math.floor((timestamp.getTime() + value) / 1000);
 
-      const token = await provider.sign({
+      const token = await jwt.sign({
         algorithm: 'RS256',
-        privateClaims: {},
-        publicClaims: {
-          [claim]: value,
+        provider: 'test',
+        schema,
+        data: {
+          privateClaims: {},
+          publicClaims: {
+            [claim]: value,
+          },
         },
         timestamp,
       });
 
-      const { publicClaims } = await provider.decode({
+      const { publicClaims } = await jwt.decode({
         token,
+        provider: 'test',
+        schema,
       });
 
       expect(publicClaims[claim]).toEqual(expectedValue);
     }
   );
 
-  test('aud, jti, sub, and iss claims should be set when provided by the user', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({
-        iss: z.string(),
-        sub: z.string(),
-        aud: z.string(),
-        jti: z.string(),
-      }),
-    });
-
-    const token = await provider.sign({
-      algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {
-        aud: 'audience',
-        jti: 'jti',
-        iss: 'issuer',
-        sub: 'subject',
-      },
-    });
-
-    const { publicClaims } = await provider.decode({
-      token,
-    });
-
-    expect(publicClaims.aud).toEqual('audience');
-    expect(publicClaims.jti).toEqual('jti');
-    expect(publicClaims.iss).toEqual('issuer');
-    expect(publicClaims.sub).toEqual('subject');
-  });
-
   test.each(['iss', 'sub', 'aud', 'jti'] as const)(
     'token creation fails when user input deviates from publicClaimsSchema: %s claim',
     async (claim) => {
-      const provider = new JwtMockProvider({
-        privateClaimsSchema: z.object({}),
-        publicClaimsSchema: z.object({
-          [claim]: z.string(),
-        }),
-      });
+      const { jwt } = createProvider();
 
       await expect(async () => {
-        return provider.sign({
+        return jwt.sign({
           algorithm: 'RS256',
-          privateClaims: {},
-          publicClaims: {},
+          provider: 'test',
+          data: {
+            privateClaims: {},
+            publicClaims: {},
+          },
+          schema: z.object({
+            privateClaims: z.object({}),
+            publicClaims: z.object({
+              [claim]: z.string(),
+            }),
+          }),
         });
       }).rejects.toThrowError(JwtTokenClaimError);
     }
   );
 
   it('token creation fails when user input deviates from privateClaimsSchema', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({
-        userId: z.string(),
-      }),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
     await expect(async () => {
-      return provider.sign({
+      return jwt.sign({
         algorithm: 'RS256',
-        // @ts-expect-error test
-        privateClaims: {},
-        publicClaims: {},
+        provider: 'test',
+        schema: z.object({
+          privateClaims: z.object({ test: z.literal('test') }),
+          publicClaims: z.object({}),
+        }),
+        data: {
+          publicClaims: {},
+          // @ts-expect-error bad input
+          privateClaims: {},
+        },
       });
     }).rejects.toThrowError(JwtTokenClaimError);
   });
 
   test('token validation fails when exp is in the past', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
     const timestamp = new Date();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {
-        exp: -2000,
+      schema,
+      data: {
+        publicClaims: {
+          exp: -2000,
+        },
+        privateClaims: {},
       },
+      provider: 'test',
       timestamp,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
+        provider: 'test',
+        schema,
         clockSkew: 0,
         timestamp,
       })
@@ -322,60 +286,67 @@ describe('JwtAbstractProvider', () => {
   });
 
   test('token validation fails when nbf is in the future', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
     const timestamp = new Date();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {
-        nbf: 2000,
+      data: {
+        privateClaims: {},
+        publicClaims: {
+          nbf: 2000,
+        },
       },
+      provider: 'test',
+      schema,
       timestamp,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
         clockSkew: 0,
+        provider: 'test',
+        schema,
         timestamp,
       })
     ).rejects.toThrowError(JwtTokenClaimError);
   });
 
   test('clockSkew allows normally invalid nbf and exp claims', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
-
+    const { jwt, schema, data } = createProvider();
     const timestamp = new Date();
     const jwtTime = Math.floor(timestamp.getTime() / 1000);
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {
-        exp: -1000,
-        nbf: 1000,
+      provider: 'test',
+      data: {
+        publicClaims: {
+          exp: -1000,
+          nbf: 1000,
+        },
+        privateClaims: {},
       },
+      schema,
       timestamp,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
+        provider: 'test',
+        schema,
         timestamp,
       })
     ).rejects.toThrow(JwtTokenClaimError);
 
-    const { publicClaims } = await provider.verify({
+    const { publicClaims } = await jwt.verify({
       clockSkew: 1000,
       token,
+      provider: 'test',
+      schema,
       timestamp,
     });
 
@@ -404,23 +375,31 @@ describe('JwtAbstractProvider', () => {
       }
     );
 
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({
+    const { jwt } = createProvider();
+
+    const schema = z.object({
+      publicClaims: z.object({}),
+      privateClaims: z.object({
         test: z.literal('test'),
       }),
-      publicClaimsSchema: z.object({}),
     });
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {
-        test: 'test',
+      schema,
+      data: {
+        privateClaims: {
+          test: 'test',
+        },
+        publicClaims: {},
       },
-      publicClaims: {},
+      provider: 'test',
     });
 
-    await provider.verify({
+    await jwt.verify({
       token,
+      provider: 'test',
+      schema,
       validate: async (args) => {
         return validate(args);
       },
@@ -430,20 +409,20 @@ describe('JwtAbstractProvider', () => {
   });
 
   test('validate callback should throw an error when false is returned', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      data,
+      schema,
+      provider: 'test',
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
+        provider: 'test',
+        schema,
         validate: async () => {
           return false;
         },
@@ -452,20 +431,20 @@ describe('JwtAbstractProvider', () => {
   });
 
   test('validate callback should not throw an error when true is returned', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({}),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {},
-      publicClaims: {},
+      provider: 'test',
+      schema,
+      data,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
+        provider: 'test',
+        schema,
         validate: async () => {
           return true;
         },
@@ -474,47 +453,39 @@ describe('JwtAbstractProvider', () => {
   });
 
   test('should return a token with a valid signature', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({
-        test: z.literal('test'),
-      }),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {
-        test: 'test',
-      },
-      publicClaims: {},
+      provider: 'test',
+      schema,
+      data,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token,
+        provider: 'test',
+        schema,
       })
     ).resolves.toBeTruthy();
   });
 
   test('should reject a token with an invalid signature', async () => {
-    const provider = new JwtMockProvider({
-      privateClaimsSchema: z.object({
-        test: z.literal('test'),
-      }),
-      publicClaimsSchema: z.object({}),
-    });
+    const { jwt, schema, data } = createProvider();
 
-    const token = await provider.sign({
+    const token = await jwt.sign({
       algorithm: 'RS256',
-      privateClaims: {
-        test: 'test',
-      },
-      publicClaims: {},
+      provider: 'test',
+      schema,
+      data,
     });
 
     await expect(
-      provider.verify({
+      jwt.verify({
         token: `${token}a`,
+        provider: 'test',
+        schema,
       })
     ).rejects.toThrow(JwtTokenInvalidSignatureError);
   });

@@ -55,10 +55,10 @@ This library is an opinionated JWT library focused on:
 This table has links to the individual providers. You should read the docs on the specific provider you want to use to learn how to install, setup credentials, and instantiate your provider and then come back to this page to read the docs on signing, verifying, and decoding tokens.
 | Algorithm Type | Supported Algorithms | Local Provider | AWS KMS Provider |
 | :---------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---|
-| `HS` (Symmetric) | `HS256` </br> `HS384` </br> `HS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-local-hs-provider/README.md">@zod-jwt/jwt-local-hs-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-kms-hs-provider/README.md">@zod-jwt/jwt-kms-hs-provider</a> |
-| `RS` (Asymmetric) | `RS256` </br> `RS384` </br> `RS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-local-rs-provider/README.md">@zod-jwt/jwt-local-rs-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-kms-rs-provider/README.md">@zod-jwt/jwt-kms-rs-provider</a> |
-| `PS` (Asymmetric) | `PS256` </br> `PS384` </br> `PS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-local-ps-provider/README.md">@zod-jwt/jwt-local-ps-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-kms-ps-provider/README.md">@zod-jwt/jwt-kms-ps-provider</a> |
-| `ES` (Asymmetric) | `ES256` </br> `ES384` </br> `ES512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-local-es-provider/README.md">@zod-jwt/jwt-local-es-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/providers/jwt-kms-es-provider/README.md">@zod-jwt/jwt-kms-es-provider</a> |
+| `HS` (Symmetric) | `HS256` </br> `HS384` </br> `HS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/local/local-hs-provider/README.md">local-hs-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/kms/kms-hs-provider/README.md">kms-hs-provider</a> |
+| `RS` (Asymmetric) | `RS256` </br> `RS384` </br> `RS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/local/local-rs-provider/README.md">local-rs-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/kms/kms-rs-provider/README.md">kms-rs-provider</a> |
+| `PS` (Asymmetric) | `PS256` </br> `PS384` </br> `PS512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/local/local-ps-provider/README.md">local-ps-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/kms/kms-ps-provider/README.md">kms-ps-provider</a> |
+| `ES` (Asymmetric) | `ES256` </br> `ES384` </br> `ES512` | <a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/local/local-es-provider/README.md">local-es-provider</a>|<a href="https://github.com/zod-jwt/zod-jwt/blob/main/packages/core/src/providers/kms/kms-es-provider/README.md">kms-es-provider</a> |
 
 ---
 
@@ -70,39 +70,54 @@ _For example purposes, this page will use the `JwtLocalRsProvider`, however all 
 
 ```ts
 import { z } from 'zod';
-import { JwtLocalRsProvider } from '@zod-jwt/jwt-local-rs-provider';
+import { LocalRsProvider, Jwt } from '@zod-jwt/zod-jwt/providers';
 
-const provider = new JwtLocalRsProvider({
+const rsProvider = new LocalRsProvider({
+  providerName: 'RS',
   algorithms: ['RS256'],
   credentials: {
     publicKey: process.env.PUBLIC_KEY as string,
     privateKey: process.env.PRIVATE_KEY as string,
   },
-  publicClaimsSchema: z.object({
+});
+
+const jwt = new Jwt({
+  // multiple providers can be added if needed
+  providers: [rsProvider],
+});
+
+const myJwtSchema = z.object({
+  publicClaims: z.object({
     iss: z.literal('auth.example.com'),
     aud: z.literal('example.com'),
     sub: z.string(),
   }),
-  privateClaimsSchema: z.object({
+  privateClaims: z.object({
     firstName: z.string(),
     lastName: z.string(),
   }),
 });
 
-const token = await provider.sign({
+const token = await jwt.sign({
+  provider: 'RS',
   algorithm: 'RS256',
-  publicClaims: {
-    iss: 'auth.example.com',
-    aud: 'example.com',
-    sub: 'user_1234',
-  },
-  privateClaims: {
-    firstName: 'John',
-    lastName: 'Doe',
+  schema: myJwtSchema,
+  data: {
+    publicClaims: {
+      iss: 'auth.example.com',
+      aud: 'example.com',
+      sub: 'user_1234',
+    },
+    privateClaims: {
+      firstName: 'John',
+      lastName: 'Doe',
+    },
   },
 });
 
-const { header, privateClaims, publicClaims } = await provider.verify({
+const { header, privateClaims, publicClaims } = await jwt.verify({
+  provider: 'RS',
+  schema: myJwtSchema,
   token,
 });
 ```
@@ -130,17 +145,21 @@ By default the following claims are also set:
 The `timestamp` property sets the signing time for the token and affects the time set in the `iat`, `exp`, and `nbf` claims. In the below example we are overriding the `timestamp`. As a result the `iat` and `nbf` claims will be equal to 1/1/2023 @ 9:00 AM while the `exp` claim will be equal to 1/1/2023 @ 9:15 AM. The `timestamp` can be used in conjunction with the relative offsets in the next example.
 
 ```ts
-const token = await provider.sign({
+const token = await jwt.sign({
+  provider: 'RS',
   algorithm: 'RS256',
-  publicClaims: {
-    iss: 'auth.example.com',
-    aud: 'example.com',
-    sub: 'user_1234',
-  },
-  privateClaims: {
-    firstName: 'John',
-    lastName: 'Doe',
-  },
+  schema: myJwtSchema,
+  data: {
+    publicClaims: {
+      iss: 'auth.example.com',
+      aud: 'example.com',
+      sub: 'user_1234',
+    },
+    privateClaims: {
+      firstName: 'John',
+      lastName: 'Doe',
+    },
+  }
   timestamp: new Date('January 1, 2023 9:00:00'), // <-- manually set the timestamp
 });
 ```
@@ -153,34 +172,42 @@ In this example, we back date the `nbf` claim by 1 second and set the `exp` clai
 
 ```ts
 // number example
-const token = await provider.sign({
+const token = await jwt.sign({
+  provider: 'RS',
   algorithm: 'RS256',
-  publicClaims: {
-    iss: 'auth.example.com',
-    aud: 'example.com',
-    sub: 'user_1234',
-    nbf: -1000 * 60, // <-- back date by 1 minute
-    exp: 1000 * 60 * 10, // <-- set the exp to 10 minutes from now
-  },
-  privateClaims: {
-    firstName: 'John',
-    lastName: 'Doe',
+  schema: myJwtSchema,
+  data: {
+    publicClaims: {
+      iss: 'auth.example.com',
+      aud: 'example.com',
+      sub: 'user_1234',
+      nbf: -1000 * 60, // <-- back date by 1 minute
+      exp: 1000 * 60 * 10, // <-- set the exp to 10 minutes from now
+    },
+    privateClaims: {
+      firstName: 'John',
+      lastName: 'Doe',
+    },
   },
 });
 
 // string example
-const token = await provider.sign({
+const token = await jwt.sign({
+  provider: 'RS',
   algorithm: 'RS256',
-  publicClaims: {
-    iss: 'auth.example.com',
-    aud: 'example.com',
-    sub: 'user_1234',
-    nbf: '-1 second', // <-- back date by 1 minute
-    exp: '10 minutes', // <-- set the exp to 10 minutes from now
-  },
-  privateClaims: {
-    firstName: 'John',
-    lastName: 'Doe',
+  schema: myJwtSchema,
+  data: {
+    publicClaims: {
+      iss: 'auth.example.com',
+      aud: 'example.com',
+      sub: 'user_1234',
+      nbf: '-1 second', // <-- back date by 1 minute
+      exp: '10 minutes', // <-- set the exp to 10 minutes from now
+    },
+    privateClaims: {
+      firstName: 'John',
+      lastName: 'Doe',
+    },
   },
 });
 ```
@@ -194,8 +221,10 @@ const token = await provider.sign({
 If you set the `timestamp` when verifying a token the `nbf` and `exp` claims will be validated as of that time.
 
 ```ts
-const { header, privateClaims, publicClaims } = await provider.verify({
+const { header, privateClaims, publicClaims } = await jwt.verify({
   token,
+  provider: 'RS',
+  schema: myJwtSchema,
   timestamp: new Date('January 1, 2023 9:00:00'), // <-- manually set the timestamp
 });
 ```
@@ -213,14 +242,18 @@ Note: the `timestamp` is automatically set for you but you can override it if yo
 
 ```ts
 // number example
-const { header, privateClaims, publicClaims } = await provider.verify({
+const { header, privateClaims, publicClaims } = await jwt.verify({
   token,
+  provider: 'RS',
+  schema: myJwtSchema,
   clockSkew: 1000 * 10, // <-- allow invalid tokens a grace period for up to 10 seconds
 });
 
 // string example
-const { header, privateClaims, publicClaims } = await provider.verify({
+const { header, privateClaims, publicClaims } = await jwt.verify({
   token,
+  provider: 'RS',
+  schema: myJwtSchema,
   clockSkew: '10 seconds', // <-- allow invalid tokens a grace period for up to 10 seconds
 });
 ```
@@ -232,8 +265,10 @@ Sometimes claims cannot be validated by a library because they are domain specif
 In this hypothetical example we make sure that the user has not been banned after their original token was created. If you are implementing a token blacklist you can use this callback to check against the blacklist.
 
 ```ts
-const { header, privateClaims, publicClaims } = await provider.verify({
+const { header, privateClaims, publicClaims } = await jwt.verify({
   token,
+  provider: 'RS',
+  schema: myJwtSchema,
   validate: async ({ header, publicClaims, privateClaims }) => {
     const userId = publicClaims.sub;
     const user = await db.users.getById(userId);
@@ -264,7 +299,7 @@ import {
   JwtTokenInvalidSignatureError,
   JwtTokenMalformedError,
   JwtUnknownError,
-} from '@zod-jwt/core/errors';
+} from '@zod-jwt/zod-jwt/errors';
 
 try {
   // sign, decode, verify

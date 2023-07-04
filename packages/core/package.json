@@ -1,7 +1,7 @@
 {
-  "name": "@zod-jwt/core",
+  "name": "@zod-jwt/zod-jwt",
   "type": "module",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "license": "MIT",
   "author": "Adam Smith",
   "homepage": "https://github.com/zod-jwt/zod-jwt",
@@ -9,10 +9,16 @@
     "type": "git",
     "url": "https://github.com/zod-jwt/zod-jwt"
   },
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./index.js",
+  "types": "./index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./index.js",
+    "./schema": "./schema/index.js",
+    "./util": "./util/index.js",
+    "./errors": "./errors/index.js",
+    "./abstract-provider": "./abstract-provider/index.js",
+    "./jwt": "./jwt/index.js",
+    "./providers": "./providers/index.js"
   },
   "engines": {
     "node": ">=16"
@@ -20,16 +26,27 @@
   "files": ["dist"],
   "dependencies": {
     "base64url": "^3.0.1",
+    "ecdsa-sig-formatter": "^1.0.11",
     "ms": "^2.1.3"
   },
   "peerDependencies": {
-    "zod": ">=3"
+    "zod": ">=3",
+    "@aws-sdk/client-kms": ">=3",
+    "@aws-sdk/types": ">=3"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-kms": {
+      "optional": true
+    },
+    "@aws-sdk/types": {
+      "optional": true
+    }
   },
   "scripts": {
     "clean": "rm -rf ./dist",
     "compile": "tsc -p tsconfig.build.json",
-    "build": "pnpm run clean && pnpm run compile",
+    "build": "pnpm run clean && pnpm run compile && cp ./package.json ./dist/package.json",
     "test": "pnpm vitest run --reporter verbose",
-    "deploy": "pnpm publish --access public"
+    "deploy": "cd ./dist && pnpm publish --access public"
   }
 }

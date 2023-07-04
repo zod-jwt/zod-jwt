@@ -3,9 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "noEmit": true,
-    "paths": {
-      "@zod-jwt/core/*": ["packages/core/src/*"],
-      "@zod-jwt/providers/*": ["packages/providers/*/src"]
-    }
+    "paths": {}
   }
 }
