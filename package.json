@@ -1,6 +1,6 @@
 {
   "name": "zod-jwt-monorepo",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "license": "MIT",
   "scripts": {
     "ui": "vitest --ui",
