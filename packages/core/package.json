@@ -23,7 +23,6 @@
   "engines": {
     "node": ">=16"
   },
-  "files": ["dist"],
   "dependencies": {
     "base64url": "^3.0.1",
     "ecdsa-sig-formatter": "^1.0.11",
